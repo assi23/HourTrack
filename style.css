@@ -7,7 +7,7 @@
 body {
     font-family: Arial, sans-serif;
     /* darker pastel pink background for the page */
-    background: linear-gradient(180deg, #f6c1d3 0%, #f3afc4 100%);
+    background:  #f6c1d3;
     display: flex;
     justify-content: center;
     padding: 24px;
