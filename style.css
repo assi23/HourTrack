@@ -166,18 +166,23 @@ button:focus {
     align-items: center;
     justify-content: center;
     transition: background 180ms ease;
+    z-index: 2000; /* ensure modal overlay sits above page content (e.g. tables, signature) */
+    padding: 12px; /* small padding so modal doesn't touch viewport edges on small screens */
 }
 
 .modal-overlay[aria-hidden="false"] {
     display: flex;
-    background: rgba(0,0,0,0.4); /* faded backdrop when open */
+    background: rgba(0,0,0,0.45); /* slightly stronger backdrop when open */
 }
 
 .modal {
     background: white;
     padding: 16px 18px;
     border-radius: 8px;
-    width: 320px;
+    width: 420px;
+    max-width: calc(100% - 48px);
+    max-height: 80vh; /* keep modal within viewport */
+    overflow: auto; /* scroll internally when content is long */
     box-shadow: 0 6px 30px rgba(0,0,0,0.12);
     transform: translateY(-8px) scale(0.98);
     opacity: 0;
@@ -189,9 +194,11 @@ button:focus {
     opacity: 1;
 }
 
-/* Clear modal */
+/* improve spacing for clear modal list items */
 #clearModal .clear-options { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
-#clearModal .modal-actions { margin-top:12px; display:flex; gap:8px; }
+#clearModal .clear-options label.clear-record-item { display:flex; gap:8px; align-items:center; background: #fff; padding:6px 8px; border-radius:6px; border:1px solid rgba(0,0,0,0.04); }
+#clearModal .clear-options label.clear-record-item input[type="checkbox"] { flex: 0 0 auto; }
+#clearModal .clear-options label.clear-record-item span { flex: 1 1 auto; font-size:0.95rem; color:#111; }
 
 /* signature: improved background and text colors for better contrast and aesthetics */
 .signature {
@@ -318,4 +325,16 @@ button:focus {
     overflow: visible !important;
     text-overflow: clip !important;
     white-space: normal !important;
+}
+
+/* Clear modal - improve spacing between action buttons and cancel button */
+#clearModal .modal-actions { margin-top:12px; display:flex; gap:12px; flex-wrap:wrap; }
+#clearModal .modal-close { margin-top:18px; display:flex; justify-content:flex-end; }
+#clearModal .modal-close button { padding:8px 12px; border-radius:8px; background:#6b7280; color:#fff; border:none; }
+
+/* Ensure the modal actions don't look cramped on small screens */
+@media (max-width: 420px) {
+    #clearModal .modal-actions { flex-direction: column; gap:10px; }
+    #clearModal .modal-close { justify-content: stretch; }
+    #clearModal .modal-close button { width: 100%; }
 }
