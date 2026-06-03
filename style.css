@@ -6,19 +6,23 @@
 
 body {
     font-family: Arial, sans-serif;
-    background: #f4f6f8;
+    /* darker pastel pink background for the page */
+    background: linear-gradient(180deg, #f6c1d3 0%, #f3afc4 100%);
     display: flex;
     justify-content: center;
     padding: 24px;
+    color: #2a2a2a; /* slightly warm neutral for text for good contrast */
 }
 
 .container {
-    background: white;
+    /* very light pink card to sit above the darker page background */
+    background: #fff7fb;
     width: 100%;
     max-width: 1400px; /* increased to allow wider table */
     padding: 24px;
     border-radius: 12px;
-    box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+    /* softer, warm shadow to match pastel aesthetic */
+    box-shadow: 0 10px 30px rgba(179,99,130,0.08);
     /* use CSS grid to prevent left column content from overlapping the right table */
     display: grid;
     grid-template-columns: minmax(0, 1fr) 520px; /* larger right column to fit table */
@@ -52,47 +56,55 @@ label {
     display: block;
     margin-bottom: 6px;
     font-weight: 600;
-    color: #333;
+    /* warm dark gray for readable labels */
+    color: #42343a;
 }
 
 input[type="time"] {
     width: 100%; /* responsive: fill available column */
     max-width: 220px; /* keep inputs reasonable width */
     padding: 8px;
-    border: 1px solid #e3e3e3;
+    /* subtle pink border to reinforce palette */
+    border: 1px solid #f0c8d6;
     border-radius: 6px;
     box-sizing: border-box;
+    background: #ffffff;
 }
 
 input[type="time"]:focus {
-    outline: 3px solid rgba(0,118,255,0.12);
+    outline: 3px solid rgba(255,95,168,0.14); /* gentle pink focus ring */
     outline-offset: 2px;
 }
 
 button {
     padding: 10px 14px;
     border: none;
-    background: #0077ff;
+    /* default button uses a soft pastel pink */
+    background: #ff5fa8;
     color: white;
     border-radius: 8px;
     cursor: pointer;
     font-size: 14px;
+    transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+    box-shadow: 0 6px 18px rgba(231,126,166,0.12);
 }
 
 button.secondary {
-    background: #6b7280;
+    background: #f3b6c9; /* muted pastel pink for secondary actions */
+    color: #2b1e23;
 }
 
 button.primary {
-    background: #0066cc;
+    background: #f3b6c9;
+    color: #2b1e23; /* stronger pink for primary actions */
 }
 
 button:focus {
-    outline: 3px solid rgba(0,118,255,0.25);
+    outline: 3px solid rgba(255,95,168,0.22);
     outline-offset: 2px;
 }
 
-.icon { vertical-align: middle; margin-right: 8px; }
+button:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(231,126,166,0.14); }
 
 #calculateBtn {
     margin-top: 8px;
@@ -109,7 +121,8 @@ button:focus {
 
 .result p {
     font-size: 1.8rem;
-    color: #0077ff;
+    /* use a confident darker pink for results while keeping legibility */
+    color: #c2185b;
     font-weight: 700;
 }
 
@@ -135,7 +148,7 @@ button:focus {
 }
 
 #hoursTable th {
-    background: #fafafa;
+    background: #fff0f6; /* very light pink header */
     font-weight: 600;
 }
 
@@ -200,16 +213,16 @@ button:focus {
 #clearModal .clear-options label.clear-record-item input[type="checkbox"] { flex: 0 0 auto; }
 #clearModal .clear-options label.clear-record-item span { flex: 1 1 auto; font-size:0.95rem; color:#111; }
 
-/* signature: improved background and text colors for better contrast and aesthetics */
+/* signature: pastel pink gradient to match the new theme */
 .signature {
     position: fixed;
     left: 16px;
     bottom: 16px;
-    background: linear-gradient(90deg, #ff6b6b 0%, #ffb86b 100%);
+    background: linear-gradient(90deg, #ff77bd 0%, #ffd6ea 100%);
     color: #ffffff;
     padding: 8px 14px;
     border-radius: 12px;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.14);
+    box-shadow: 0 10px 30px rgba(179,99,130,0.12);
     z-index: 1400;
     display: inline-flex;
     gap: 10px;
@@ -290,9 +303,9 @@ button:focus {
 
 /* selectable row styles */
 #hoursTable tbody tr.selectable { cursor: pointer; }
-#hoursTable tbody tr.row-selected { background: rgba(0,118,255,0.06); outline: 2px dashed rgba(0,118,255,0.12); }
+#hoursTable tbody tr.row-selected { background: rgba(255,95,168,0.08); outline: 2px dashed rgba(255,95,168,0.16); }
 
-#hoursTable tbody tr.selectable:focus { outline: 3px solid rgba(0,118,255,0.12); }
+#hoursTable tbody tr.selectable:focus { outline: 3px solid rgba(255,95,168,0.12); }
 
 /* layout: row for top inputs */
 .row { display:flex; gap:16px; align-items:center; }
