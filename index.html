@@ -1,64 +1,143 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Work Hours Calculator</title>
+    <title>Calculadora de Horas de Trabalho</title>
     <link rel="stylesheet" href="style.css">
+    <!-- prevent automatic favicon request (avoids 404) -->
+    <link rel="icon" href="data:;base64,=" />
 </head>
 <body>
 
     <div class="container">
-        <h1>Work Hours Calculator</h1>
+        <div class="left">
+            <h1>Calculadora de Horas de Trabalho</h1>
 
-        <div class="form-group">
-            <label>Total Work Hours Per Day</label>
-            <input type="time" id="dailyHours" value="08:00">
+            <!-- top settings: stack instead of one-row to avoid layout overlap -->
+            <div class="row">
+                <div class="form-group">
+                    <label>Horas de trabalho por dia</label>
+                    <input type="time" id="dailyHours" value="08:00">
+                </div>
+
+                <div class="form-group">
+                    <label>Duração do almoço</label>
+                    <input type="time" id="lunchTime" value="01:00">
+                </div>
+            </div>
+
+            <hr>
+
+            <h2>Período Trabalhado</h2>
+
+            <div class="form-group">
+                <label>Início do trabalho</label>
+                <input type="time" id="startWork">
+            </div>
+
+            <div class="form-group">
+                <label>Início do almoço</label>
+                <input type="time" id="lunchStart">
+            </div>
+
+            <div class="form-group">
+                <label>Término do almoço (retorno ao trabalho)</label>
+                <input type="time" id="lunchEnd">
+            </div>
+
+            <div class="form-group">
+                <label>Hora de saída (real) — opcional para cálculo exato</label>
+                <input type="time" id="actualExit">
+            </div>
+
+            <div class="form-group">
+                <label>Horas extras (opcional)</label>
+                <input type="time" id="extraHours" value="00:00">
+            </div>
+
+            <button id="calculateBtn">Calcular</button>
+
+            <div class="result">
+                <h3>Hora esperada / saída real</h3>
+                <p id="result">--:--</p>
+            </div>
         </div>
 
-        <div class="form-group">
-            <label>Lunch Break Duration</label>
-            <input type="time" id="lunchTime" value="01:00">
-        </div>
+        <div class="right" aria-label="Painel de saldo de horas">
+            <h3>Saldo de Horas (Extras / A Pagar)</h3>
+            <table id="hoursTable">
+                <thead>
+                    <tr id="hoursHeader">
+                        <!-- headers populated by JS -->
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- preenchido via JS: single row -->
+                </tbody>
+                <tfoot>
+                    <!-- totals -->
+                </tfoot>
+            </table>
 
-        <hr>
-
-        <h2>Worked Period</h2>
-
-        <div class="form-group">
-            <label>Start Work</label>
-            <input type="time" id="startWork">
-        </div>
-
-        <div class="form-group">
-            <label>Lunch Start</label>
-            <input type="time" id="lunchStart">
-        </div>
-
-        <div class="form-group">
-            <label>Lunch End</label>
-            <input type="time" id="lunchEnd">
-        </div>
-
-        <div class="form-group">
-            <label>Current Time / Return to Work</label>
-            <input type="time" id="returnWork">
-        </div>
-
-        <div class="form-group">
-            <label>Optional Extra Hours</label>
-            <input type="time" id="extraHours" value="00:00">
-        </div>
-
-        <button id="calculateBtn">Calculate Exit Time</button>
-
-        <div class="result">
-            <h3>Expected Exit Time</h3>
-            <p id="result">--:--</p>
+            <div class="table-actions">
+                <button id="exportBtn" class="primary" aria-haspopup="dialog" aria-controls="exportModal">
+                    <!-- icon: export (decorative) -->
+                    <svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M5 20h14v-2H5v2zm7-18L5.33 9h3.67v6h6V9h3.67L12 2z"/></svg>
+                    <span>Exportar</span>
+                </button>
+                <button id="clearBtn" class="secondary">
+                    <!-- icon: clear (decorative) -->
+                    <svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                    <span>Limpar</span>
+                </button>
+            </div>
         </div>
     </div>
-    
-    <script src="jspdf.umd.min.js"></script>
+    <!-- Export modal -->
+    <div id="exportModal" class="modal-overlay" aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="modal" role="document">
+            <h4>Exportar relatório</h4>
+            <p>Escolha o formato de exportação:</p>
+            <div class="modal-actions">
+                <button data-type="txt" class="modal-option">TXT</button>
+                <button data-type="pdf" class="modal-option">PDF</button>
+                <button data-type="csv" class="modal-option">Excel (CSV)</button>
+            </div>
+            <div class="modal-close">
+                <button id="closeExportModal">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clear modal -->
+    <div id="clearModal" class="modal-overlay" aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="modal" role="document">
+            <h4>Limpar registros</h4>
+            <p>Escolha os registros que deseja remover:</p>
+            <div id="clearListContainer" class="clear-options">
+                <!-- preenchido via JS com registros (id, data, saldo) -->
+            </div>
+            <div class="modal-actions">
+                <button id="clearAllBtn" class="modal-option">Limpar tudo</button>
+                <button id="clearSelectedBtn" class="modal-option">Limpar selecionados</button>
+            </div>
+            <div class="modal-close">
+                <button id="closeClearModal">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+          <!-- fixed signature footer (always visible) -->
+    <div class="signature" id="signatureFooter" aria-expanded="true" role="note">
+        <div class="sig-text">
+            <span class="heart" aria-hidden="true">❤️</span>
+            <span>Feito com amor — <strong>Te amo Janice</strong></span>
+        </div>
+        <button type="button" class="sig-toggle" id="signatureToggle" aria-label="Ocultar assinatura">▾</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="main.js"></script>
 </body>
 </html>
