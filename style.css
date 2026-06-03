@@ -15,13 +15,13 @@ body {
 .container {
     background: white;
     width: 100%;
-    max-width: 1100px;
+    max-width: 1400px; /* increased to allow wider table */
     padding: 24px;
     border-radius: 12px;
     box-shadow: 0 6px 24px rgba(0,0,0,0.08);
     /* use CSS grid to prevent left column content from overlapping the right table */
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 320px; /* minmax fixes content overflow into second column */
+    grid-template-columns: minmax(0, 1fr) 520px; /* larger right column to fit table */
     gap: 32px;
     align-items: start;
 }
@@ -30,6 +30,9 @@ body {
 
 /* ensure table never sits on top of left inputs */
 .right { z-index: 1; position: relative; }
+
+/* Make the right column expand to show the whole table (no internal scrolling) */
+.right { overflow: visible; max-height: none; }
 
 h1 {
     margin-bottom: 20px;
@@ -93,7 +96,11 @@ button:focus {
 
 #calculateBtn {
     margin-top: 8px;
-    width: 100%;
+    width: auto; /* don't stretch full width on larger screens */
+    padding: 6px 10px; /* smaller click area */
+    font-size: 13px; /* slightly smaller text */
+    max-width: 160px; /* limit how wide it can grow */
+    align-self: flex-start; /* keep it left-aligned with inputs */
 }
 
 .result {
@@ -122,9 +129,9 @@ button:focus {
     border: 1px solid #e6e6e6;
     padding: 8px;
     text-align: left;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow: visible; /* allow content to expand instead of hiding */
+    text-overflow: clip;
+    white-space: normal; /* allow wrapping so full content is visible */
 }
 
 #hoursTable th {
@@ -293,3 +300,22 @@ button:focus {
 
 /* ensure export button looks clickable */
 .table-actions { align-items: stretch; }
+/* Overrides to ensure the table is fully visible without internal scrolling */
+.container {
+    /* increase right column to give table more horizontal space */
+    grid-template-columns: minmax(0, 1fr) 900px !important;
+    max-width: 1800px !important;
+}
+
+.right {
+    /* allow the right column to expand so the page scrolls instead of the div */
+    overflow: visible !important;
+    max-height: none !important;
+}
+
+/* ensure table cells wrap and show all content (remove truncation) */
+#hoursTable th, #hoursTable td {
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+}
