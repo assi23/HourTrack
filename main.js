@@ -742,6 +742,188 @@ window.__recordsCache = loadRecords();
 const exportBtn = document.getElementById('exportBtn');
 if (exportBtn) exportBtn.addEventListener('click', (e) => { e.preventDefault(); exportExcel(); });
 
+// --- Import CSV functionality ---
+function detectDelimiter(text) {
+    // look at first non-empty line, count commas and semicolons
+    const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+    if (!lines.length) return ',';
+    const first = lines[0];
+    const commaCount = (first.match(/,/g) || []).length;
+    const semiCount = (first.match(/;/g) || []).length;
+    return (semiCount > commaCount) ? ';' : ',';
+}
+
+function parseCSV(text, delimiter=',') {
+    // simple robust CSV parser supporting quoted fields and double-quote escaping and configurable delimiter
+    const rows = [];
+    let cur = '';
+    let row = [];
+    let inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        const next = text[i+1];
+        if (inQuotes) {
+            if (ch === '"') {
+                if (next === '"') { cur += '"'; i++; } else { inQuotes = false; }
+            } else {
+                cur += ch;
+            }
+        } else {
+            if (ch === '"') { inQuotes = true; }
+            else if (ch === delimiter) { row.push(cur); cur = ''; }
+            else if (ch === '\r') { continue; }
+            else if (ch === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; }
+            else { cur += ch; }
+        }
+    }
+    if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+    return rows.map(r => r.map(c => (c || '').trim()));
+}
+
+function normalizeHeader(h) {
+    if (!h) return '';
+    // remove BOM, lowercase, remove diacritics and non-alphanumerics so matching is tolerant
+    let s = String(h).replace(/^\uFEFF/, '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/[\u0300-\u036f]/g, '');
+    s = s.replace(/[^a-z0-9]/g, '');
+    return s;
+}
+
+function parseBrazilDateToISO(s) {
+    if (!s) return null;
+    const str = String(s).trim();
+    // match DD-MM-YYYY or DD/MM/YYYY or DD-MM-YYYY-HH-MM-SS etc. Take first 3 numeric parts
+    const m = str.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+    if (!m) return null;
+    let dd = Number(m[1]);
+    let mm = Number(m[2]);
+    let yyyy = Number(m[3]);
+    if (yyyy < 100) yyyy += 2000;
+    const d = new Date(yyyy, mm - 1, dd);
+    if (isNaN(d)) return null;
+    return d.toISOString();
+}
+
+function parseSignedTimeToMinutes(s) {
+    if (!s) return 0;
+    const t = String(s).trim();
+    const sign = t.startsWith('-') ? -1 : 1;
+    const stripped = t.replace(/^[+-]/, '').trim();
+    const m = stripped.match(/(\d{1,2}):(\d{1,2})/);
+    if (!m) return 0;
+    const hrs = Number(m[1]);
+    const mins = Number(m[2]);
+    if (isNaN(hrs) || isNaN(mins)) return 0;
+    return sign * (hrs * 60 + mins);
+}
+
+const importBtn = document.getElementById('importBtn');
+if (importBtn) importBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv,text/csv';
+    input.style.display = 'none';
+    input.addEventListener('change', (ev) => {
+        const file = input.files && input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            try {
+                const text = reader.result;
+                const delim = detectDelimiter(text);
+                const rows = parseCSV(text, delim);
+                if (!rows || rows.length < 2) { alert('CSV inválido ou vazio.'); return; }
+                const headers = rows[0].map(h => h || '');
+                const headerNorms = headers.map(h => normalizeHeader(h));
+
+                function findHeader(candidates) {
+                    for (let j = 0; j < headerNorms.length; j++) {
+                        const h = headerNorms[j];
+                        for (const cand of candidates) {
+                            const parts = cand.split('|');
+                            let ok = true;
+                            for (const p of parts) if (!h.includes(p)) { ok = false; break; }
+                            if (ok) return j;
+                        }
+                    }
+                    return -1;
+                }
+
+                const idx = {
+                    id: findHeader(['id']),
+                    data: findHeader(['data','date']),
+                    startWork: findHeader(['iniciodotrabalho','iniciodotrab','inicio|trabalho','startwork']),
+                    lunchStart: findHeader(['iniciodoalmoco','inicio|almoco','almocoinicio','almoco']),
+                    lunchEnd: findHeader(['terminodoalmoco','termino|almoco','almoco|termin']),
+                    exit: findHeader(['horadesaida','horasaida','hora|saida','saida']),
+                    saldo: findHeader(['saldo'])
+                };
+
+                const existing = loadRecords();
+                let imported = 0;
+                for (let i = 1; i < rows.length; i++) {
+                    const r = rows[i];
+                    const anyNonEmpty = r.some(c => String(c || '').trim() !== '');
+                    if (!anyNonEmpty) continue;
+                    // try best-effort to locate the Data cell
+                    const dataCell = (idx.data !== -1 && r[idx.data] !== undefined) ? String(r[idx.data]).trim() : '';
+                    if (!dataCell || /saldo total acumulado/i.test(dataCell)) continue;
+
+                    const startWorkVal = (idx.startWork !== -1 && r[idx.startWork] !== undefined) ? String(r[idx.startWork]).trim() : '';
+                    const lunchStartVal = (idx.lunchStart !== -1 && r[idx.lunchStart] !== undefined) ? String(r[idx.lunchStart]).trim() : '';
+                    const lunchEndVal = (idx.lunchEnd !== -1 && r[idx.lunchEnd] !== undefined) ? String(r[idx.lunchEnd]).trim() : '';
+                    const exitVal = (idx.exit !== -1 && r[idx.exit] !== undefined) ? String(r[idx.exit]).trim() : '';
+                    const saldoVal = (idx.saldo !== -1 && r[idx.saldo] !== undefined) ? String(r[idx.saldo]).trim() : '';
+
+                    const isoDate = parseBrazilDateToISO(dataCell) || new Date().toISOString();
+                    const dateDisplay = dataCell || formatBrazilDate(new Date());
+
+                    const balanceDisplay = saldoVal || '+00:00';
+                    const balanceMinutes = parseSignedTimeToMinutes(balanceDisplay);
+
+                    const rec = {
+                        id: getNextId(),
+                        date: isoDate,
+                        dateDisplay,
+                        startWork: startWorkVal || '',
+                        lunchStart: lunchStartVal || '',
+                        lunchEnd: lunchEndVal || '',
+                        actualExit: exitVal || null,
+                        morning: '',
+                        afternoon: '',
+                        extras: '',
+                        total: '',
+                        required: '',
+                        balanceMinutes,
+                        balanceDisplay,
+                        expectedExit: '',
+                        actualExitRaw: exitVal || null
+                    };
+                    existing.push(rec);
+                    window.__recordsCache.push(rec);
+                    imported++;
+                }
+
+                if (imported > 0) {
+                    saveRecords(existing);
+                    renderRecordsTable(existing);
+                    populateClearModalList();
+                    alert(`Importados ${imported} registro(s).`);
+                } else {
+                    alert('Nenhum registro importado. Verifique o arquivo CSV.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Erro ao processar CSV: ' + (err && err.message ? err.message : err));
+            }
+        };
+        reader.readAsText(file, 'utf-8');
+    });
+    document.body.appendChild(input);
+    input.click();
+    setTimeout(() => { try { document.body.removeChild(input); } catch (e) {} }, 2000);
+});
+
 function tableHasData() {
     const table = document.getElementById('hoursTable');
     if (!table) return false;
