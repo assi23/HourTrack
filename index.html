@@ -3,158 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora de Horas de Trabalho</title>
+    <title>Home</title>
     <link rel="stylesheet" href="style.css">
-    <!-- prevent automatic favicon request (avoids 404) -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Icons" rel="stylesheet">
     <link rel="icon" href="data:;base64,=" />
 </head>
 <body>
 
-    <div class="app-shell">
-        <header class="app-header">
-            <div class="brand">
-                <div class="logo" aria-hidden="true">⏱️</div>
-                <div>
-                    <h1>Calculadora de Horas</h1>
-                    <p class="subtitle">Planeje seu dia, acompanhe saldo e exporte registros com facilidade</p>
-                </div>
-            </div>
-            <div class="header-actions">
-                <button id="importBtn" class="btn btn-ghost" title="Importar registros (CSV)">
-                    <svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M19 13v6H5v-6H3v6a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6h-2zM11 3v9H8l4 4 4-4h-3V3h-2z"/></svg>
-                    <span>Importar</span>
-                </button>
-                <button id="exportBtn" class="btn btn-ghost" title="Exportar registros (CSV)">
-                    <svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M5 20h14v-2H5v2zm7-18L5.33 9h3.67v6h6V9h3.67L12 2z"/></svg>
-                    <span>Exportar</span>
-                </button>
-                <button id="clearBtn" class="btn btn-outline" title="Limpar registros">
-                    <svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                    <span>Limpar</span>
-                </button>
-            </div>
-        </header>
+    <!-- Top-centered navigation -->
+    <nav class="top-nav" aria-label="Navegação principal">
+        <div class="nav-inner">
+            <a href="index.html" class="brand-badge" aria-label="Taylor Swift logo">
+                <img src="img/tsLogo.png" alt="TS logo" width="28" height="28" style="display:block; border-radius:6px; object-fit:cover;" />
+            </a>
 
-        <main class="container">
-            <section class="card card-form" aria-labelledby="workCalcTitle">
-                <div class="card-header">
-                    <h2 id="workCalcTitle">Configurações</h2>
-                    <p class="muted">Defina seus horários base e informe o período trabalhado</p>
-                </div>
-
-                <form class="form-grid" onsubmit="return false;" novalidate>
-                    <div class="row">
-                        <div class="form-group">
-                            <label for="dailyHours">Horas de trabalho por dia</label>
-                            <input type="time" id="dailyHours" value="07:30">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="lunchTime">Duração do almoço</label>
-                            <input type="time" id="lunchTime" value="01:30">
-                        </div>
-                    </div>
-
-                    <hr>
-
-                    <h3>Período Trabalhado</h3>
-
-                    <div class="form-group">
-                        <label for="startWork">Início do trabalho</label>
-                        <input type="time" id="startWork" value="08:00">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="lunchStart">Início do almoço</label>
-                        <input type="time" id="lunchStart" value="11:30">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="lunchEnd">Término do almoço (retorno ao trabalho)</label>
-                        <input type="time" id="lunchEnd" value="13:00">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="actualExit">Hora de saída (real) — opcional para cálculo exato</label>
-                        <input type="time" id="actualExit" value="17:00">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="extraHours">Horas extras (opcional)</label>
-                        <input type="time" id="extraHours" value="00:00">
-                    </div>
-
-                    <div class="form-actions">
-                        <button id="calculateBtn" type="button" class="btn btn-primary">Calcular</button>
-                        <div class="result" aria-live="polite">
-                            <label class="sr-only" for="result">Resultado: hora esperada / saída real</label>
-                            <div class="result-title">Hora esperada / saída real</div>
-                            <p id="result" class="result-value">--:--</p>
-                        </div>
-                    </div>
-                </form>
-            </section>
-
-            <aside class="card card-panel" aria-label="Painel de saldo de horas">
-                <div class="card-header">
-                    <h2>Saldo de Horas</h2>
-                    <p class="muted">Registros do mês — extras e a pagar</p>
-                </div>
-
-                <div class="table-wrap">
-                    <table id="hoursTable" class="records" role="table">
-                        <thead>
-                            <tr id="hoursHeader">
-                                <!-- headers populated by JS -->
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- preenchido via JS: single row -->
-                        </tbody>
-                        <tfoot>
-                            <!-- totals -->
-                        </tfoot>
-                    </table>
-                </div>
-
-                <!-- table actions removed: Export and Clear buttons moved to the header for a cleaner panel UI -->
-
-            </aside>
-        </main>
-
-        <!-- Clear modal (redesigned) -->
-        <div id="clearModal" class="modal-overlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="clearModalTitle">
-            <div class="modal-card" role="document">
-                <div class="modal-header">
-                    <div class="modal-icon" aria-hidden="true">🧹</div>
-                    <div>
-                        <h3 id="clearModalTitle">Limpar registros</h3>
-                        <p class="muted">Remova registros selecionados ou limpe todo o histórico. Esta ação não pode ser desfeita.</p>
-                    </div>
-                </div>
-
-                <div class="modal-body">
-                    <p class="muted">Selecione os registros que deseja remover:</p>
-
-                    <div id="clearListContainer" class="clear-list" role="list" aria-label="Lista de registros para limpar">
-                        <!-- preenchido via JS com registros (id, data, saldo). Each item should be a label with checkbox for accessibility -->
-                    </div>
-                </div>
-
-                <div class="modal-footer">
-                    <div class="modal-actions">
-                        <button id="clearAllBtn" class="modal-btn modal-btn-danger">Limpar tudo</button>
-                        <button id="clearSelectedBtn" class="modal-btn modal-btn-primary">Limpar selecionados</button>
-                    </div>
-                    <div class="modal-cancel">
-                        <button id="closeClearModal" class="modal-btn modal-btn-ghost">Cancelar</button>
-                    </div>
-                </div>
-            </div>
+            <ul class="nav-list" role="menubar">
+                <li role="none"><a role="menuitem" href="index.html" class="nav-item active"><span class="material-icons nav-icon" aria-hidden="true">home</span><span class="nav-label">Casa</span></a></li>
+                <li role="none"><a role="menuitem" href="calculadoraHora.html" class="nav-item"><span class="material-icons nav-icon" aria-hidden="true">calculate</span><span class="nav-label">Calculadora</span></a></li>
+            </ul>
         </div>
-    </div>
+    </nav>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="main.js"></script>
+    <main style="padding:120px 24px; text-align:center;">
+        <h1>Bem-vinda meu amor ❤️</h1>
+        <div id="loveMessage" style="font-size:1.25rem;color:#b80f6b;margin:12px 0 18px;font-weight:700;"></div>
+        <div style="margin-bottom:6px;color:#6b2b4a;">Para alegrar seu dia</div>
+
+        <div style="max-width:900px;margin:0 auto 18px;">
+            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/playlist/6QaO3ULIMwRXdPuPkphBss?utm_source=generator&theme=0" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+        </div>
+
+        <div style="margin-bottom:6px;color:#6b2b4a;">Nossa música</div>
+        <div>
+            <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/track/0ug5NqcwcFR2xrfTkc7k8e?utm_source=generator&theme=0" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+        </div>
+    </main>
+
+    <script>
+    (function(){
+        const messages = [
+            'Te amo além das palavras.',
+            'Cada dia com você é meu favorito.',
+            'Você é minha canção preferida.',
+            'Meu amor por você cresce todos os dias.',
+            'Você faz meu coração sorrir.',
+            'Com você, tudo é melhor.',
+            'Você é meu lar e meu lar é você.',
+            'Te amo hoje e sempre.',
+            'Você é meu sol em qualquer dia nublado.',
+            'Amar você é fácil — e real.'
+        ];
+        try {
+            const el = document.getElementById('loveMessage');
+            if (!el) return;
+            const idx = Math.floor(Math.random() * messages.length);
+            el.textContent = messages[idx];
+        } catch (e) { /* ignore */ }
+    })();
+    </script>
+
 </body>
 </html>

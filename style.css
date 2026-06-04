@@ -178,4 +178,19 @@ input[type="time"]:focus, input[type="search"]:focus{ box-shadow: 0 6px 20px rgb
 #calculateBtn{ min-width:120px; }
 #hoursTable th, #hoursTable td{ white-space:nowrap; }
 
+/* Top-centered navigation bar */
+.top-nav{ position:fixed; left:50%; transform:translateX(-50%); top:12px; background: rgba(255,255,255,0.9); border-radius:999px; padding:8px 14px; box-shadow:0 8px 30px rgba(120,38,100,0.06); z-index:2000; }
+.top-nav .nav-inner{ display:flex; align-items:center; gap:12px; }
+.top-nav .brand-badge{ display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:50%; overflow:hidden; text-decoration:none; }
+.top-nav .nav-list{ list-style:none; display:flex; gap:8px; align-items:center; margin-left:4px; }
+.top-nav .nav-item{ display:inline-flex; gap:8px; align-items:center; padding:8px 12px; border-radius:10px; text-decoration:none; color:var(--muted-text); font-weight:700; }
+.top-nav .nav-item .nav-icon{ font-size:18px; display:inline-block; }
+.top-nav .nav-item.active{ background: linear-gradient(90deg,var(--pink-400),var(--pink-300)); color:#fff; box-shadow: 0 6px 18px rgba(197,44,122,0.08); }
+.top-nav .nav-item:focus{ outline:3px solid rgba(255,95,168,0.12); }
+
+@media (max-width:700px){
+    .top-nav{ left:12px; transform:none; right:12px; top:12px; }
+    .top-nav .nav-list{ gap:6px; }
+}
+
 /* End of file */
