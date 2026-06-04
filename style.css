@@ -193,4 +193,31 @@ input[type="time"]:focus, input[type="search"]:focus{ box-shadow: 0 6px 20px rgb
     .top-nav .nav-list{ gap:6px; }
 }
 
+/* Home page redesign */
+.home{ padding:84px 20px; }
+.home-container{ max-width:1100px; margin:0 auto; }
+.hero-card{ display:flex; gap:24px; background:linear-gradient(180deg,#fff7fb,#fff0f6); padding:24px; border-radius:16px; box-shadow:0 12px 40px rgba(179,99,130,0.06); align-items:stretch; }
+.hero-left{ flex:1; display:flex; flex-direction:column; gap:12px; justify-content:center; }
+.hero-right{ width:420px; display:flex; flex-direction:column; gap:12px; }
+.hero-logo{ border-radius:10px; }
+.hero-title{ font-size:1.8rem; margin:0; color:#4b2338; }
+.hero-sub{ color:#6b2b4a; margin-top:4px; }
+.love-message{ font-size:1.15rem; color:#b80f6b; font-weight:700; margin-top:8px; }
+.hero-actions{ display:flex; gap:10px; margin-top:14px; }
+.btn{ display:inline-flex; align-items:center; justify-content:center; padding:10px 14px; border-radius:10px; font-weight:700; text-decoration:none; }
+.btn-primary{ background:linear-gradient(90deg,#ff77bd,#ff5fa8); color:#fff; }
+.btn-ghost{ background:transparent; color:#b80f6b; border:1px solid rgba(184,15,107,0.08); }
+
+.spotify-wrap{ background:linear-gradient(180deg,#ffeef6,#ffdded); padding:14px; border-radius:12px; }
+.spotify-iframe{ width:100%; height:320px; border-radius:10px; border:0; }
+.spotify-iframe-small{ width:100%; height:150px; border-radius:10px; border:0; }
+
+.home-footer{ margin-top:18px; text-align:center; color:#6b2b4a; }
+
+@media (max-width:950px){
+    .hero-card{ flex-direction:column; }
+    .hero-right{ width:100%; }
+    .spotify-iframe{ height:260px; }
+}
+
 /* End of file */
