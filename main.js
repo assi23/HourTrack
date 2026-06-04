@@ -42,6 +42,31 @@ function minutesToTime(minutes) {
     return `${String(hrs).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
 }
 
+// format Date to Brazilian order with dashes: DD-MM-YYYY-HH-MM-SS
+function formatBrazilDateTime(d) {
+    const dt = (d instanceof Date) ? d : new Date(d);
+    if (isNaN(dt)) return '';
+    const pad = (n) => String(n).padStart(2, '0');
+    const dd = pad(dt.getDate());
+    const mm = pad(dt.getMonth() + 1);
+    const yyyy = dt.getFullYear();
+    const hh = pad(dt.getHours());
+    const min = pad(dt.getMinutes());
+    const ss = pad(dt.getSeconds());
+    return `${dd}-${mm}-${yyyy}-${hh}-${min}-${ss}`;
+}
+
+// format Date to Brazilian date only: DD-MM-YYYY
+function formatBrazilDate(d) {
+    const dt = (d instanceof Date) ? d : new Date(d);
+    if (isNaN(dt)) return '';
+    const pad = (n) => String(n).padStart(2, '0');
+    const dd = pad(dt.getDate());
+    const mm = pad(dt.getMonth() + 1);
+    const yyyy = dt.getFullYear();
+    return `${dd}-${mm}-${yyyy}`;
+}
+
 function buildRows({ workedBeforeLunch, requiredMinutes, overtimeMinutes, balance, expectedExit, actualExit }) {
     return [
         ["Horas trabalhadas pela manhã", minutesToTime(workedBeforeLunch)],
@@ -161,7 +186,8 @@ function getNextId() {
 function renderRecordsTable(records) {
     const theadRow = document.getElementById('hoursHeader');
     theadRow.innerHTML = '';
-    const headers = ['ID','Data','Manhã','Tarde','Extras','Total','Necessário','Saldo','Hora esperada','Saída real'];
+    // Show ID, Data, Início do trabalho, Início do almoço, Término do almoço, Hora de saída, Saldo
+    const headers = ['ID','Data','Início do trabalho','Início do almoço','Término do almoço','Hora de saída','Saldo'];
     headers.forEach(h => { const th = document.createElement('th'); th.textContent = h; theadRow.appendChild(th); });
 
     const tbody = document.querySelector('#hoursTable tbody');
@@ -171,7 +197,17 @@ function renderRecordsTable(records) {
         tr.setAttribute('data-id', r.id);
         tr.classList.add('selectable');
         tr.tabIndex = 0;
-        const cells = [r.id, r.date, r.morning, r.afternoon, r.extras, r.total, r.required, r.balanceDisplay, r.expectedExit, r.actualExit || ''];
+        // ensure date shows Brazilian formatted date (DD-MM-YYYY) if available
+        let displayDate = r.dateDisplay || '';
+        try {
+            const dt = r.date ? new Date(r.date) : null;
+            if (dt && !isNaN(dt)) displayDate = formatBrazilDate(dt);
+        } catch (err) { /* ignore */ }
+        const startWorkDisplay = r.startWork || '';
+        const lunchStartDisplay = r.lunchStart || '';
+        const lunchEndDisplay = r.lunchEnd || '';
+        const actualExitDisplay = r.actualExit || '';
+        const cells = [r.id, displayDate, startWorkDisplay, lunchStartDisplay, lunchEndDisplay, actualExitDisplay, r.balanceDisplay];
         cells.forEach(c => { const td = document.createElement('td'); td.textContent = c; tr.appendChild(td); });
         tr.addEventListener('click', () => tr.classList.toggle('row-selected'));
         tr.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tr.classList.toggle('row-selected'); } });
@@ -183,10 +219,11 @@ function renderRecordsTable(records) {
     tfoot.innerHTML = '';
     const footTr = document.createElement('tr');
     const tdLabel = document.createElement('td');
-    tdLabel.colSpan = headers.length - 1;
+    // label spans all but last column
+    tdLabel.colSpan = Math.max(1, headers.length - 1);
     tdLabel.textContent = 'Saldo total acumulado';
     const tdVal = document.createElement('td');
-    const totalBalance = records.reduce((s, r) => s + r.balanceMinutes, 0);
+    const totalBalance = records.reduce((s, r) => s + (r.balanceMinutes || 0), 0);
     tdVal.textContent = (totalBalance >= 0 ? '+' : '-') + minutesToTime(Math.abs(totalBalance));
     tdVal.className = totalBalance >= 0 ? 'positive' : 'negative';
     footTr.appendChild(tdLabel);
@@ -194,7 +231,7 @@ function renderRecordsTable(records) {
     tfoot.appendChild(footTr);
 }
 
-function addRecordAndRender({ workedBeforeLunch, afternoonWorked, overtimeMinutes, requiredMinutes, expectedExit, actualExit }) {
+function addRecordAndRender({ workedBeforeLunch, afternoonWorked, overtimeMinutes, requiredMinutes, expectedExit, actualExit, startWorkVal, lunchStartVal, lunchEndVal, actualExitVal }, reportObj) {
     const id = getNextId();
     const morning = minutesToTime(workedBeforeLunch);
     const afternoon = minutesToTime(afternoonWorked);
@@ -203,26 +240,53 @@ function addRecordAndRender({ workedBeforeLunch, afternoonWorked, overtimeMinute
     const required = minutesToTime(requiredMinutes);
     const balanceMinutes = workedBeforeLunch + afternoonWorked - requiredMinutes;
     const balanceDisplay = (balanceMinutes >= 0 ? '+' : '-') + minutesToTime(Math.abs(balanceMinutes));
-    const date = new Date().toLocaleString();
-    const rec = { id, date, morning, afternoon, extras, total, required, balanceMinutes, balanceDisplay, expectedExit, actualExit: actualExit || null };
+    // store datetime in ISO (for machine) and a formatted display in Brazilian style
+    const now = new Date();
+    const dateRaw = now.toISOString();
+    const dateDisplay = formatBrazilDate(now); // store date only for table
+    const rec = {
+        id,
+        date: dateRaw,
+        dateDisplay,
+        startWork: startWorkVal || '',
+        lunchStart: lunchStartVal || '',
+        lunchEnd: lunchEndVal || '',
+        actualExit: actualExitVal || null,
+        morning,
+        afternoon,
+        extras,
+        total,
+        required,
+        balanceMinutes,
+        balanceDisplay,
+        expectedExit,
+        actualExitRaw: actualExit || null
+    };
     const records = loadRecords();
     records.push(rec);
     saveRecords(records);
     // update in-memory cache
     window.__recordsCache.push(rec);
     renderRecordsTable(records);
-    window.__lastReport = { expectedExit, actualExit: actualExit || null, report: rec };
+    // keep last report object (used by TXT/Excel/PDF exports) alongside the saved record
+    window.__lastReport = { expectedExit, actualExit: actualExit || null, report: reportObj || null, record: rec };
 }
 
 // Export helpers now read from window.__lastReport.report
 function exportTxt() {
-    const rpt = window.__lastReport;
-    if (!rpt || !rpt.report) { alert('Calcule antes de exportar.'); return; }
-    const { headers, values, totals } = rpt.report;
+    if (!tableHasData()) { alert('Calcule antes de exportar.'); return; }
+    const data = getTableData();
+    if (!data) { alert('Tabela não encontrada para exportar.'); return; }
     const lines = [];
-    headers.forEach((h, i) => lines.push(`${h}: ${values[i] || ''}`));
-    lines.push('');
-    lines.push(`Saldo total: ${(totals.balanceMinutes >= 0 ? '+' : '-')}${minutesToTime(Math.abs(totals.balanceMinutes))}`);
+    // header line
+    if (data.headers && data.headers.length) lines.push(data.headers.join(' | '));
+    // rows
+    data.rows.forEach(r => lines.push(r.join(' | ')));
+    // footer
+    if (data.footer) {
+        lines.push('');
+        lines.push(data.footer.join(' | '));
+    }
     const blob = new Blob([lines.join('\r\n')], { type: 'text/plain;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -231,31 +295,94 @@ function exportTxt() {
 }
 
 function exportPdf() {
-    const rpt = window.__lastReport;
-    if (!rpt || !rpt.report) { alert('Calcule antes de exportar.'); return; }
-    const { headers, values, totals } = rpt.report;
+    if (!tableHasData()) { alert('Calcule antes de exportar.'); return; }
+    const data = getTableData();
+    if (!data) { alert('Tabela não encontrada para exportar.'); return; }
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     let y = 10;
     doc.setFontSize(12);
-    headers.forEach((h, i) => { doc.text(`${h}: ${values[i] || ''}`, 10, y); y += 8; });
-    y += 4;
-    doc.text(`Saldo total: ${(totals.balanceMinutes >= 0 ? '+' : '-')}${minutesToTime(Math.abs(totals.balanceMinutes))}`, 10, y);
+    // header
+    if (data.headers && data.headers.length) {
+        doc.text(data.headers.join(' | '), 10, y); y += 8;
+    }
+    // rows
+    data.rows.forEach(row => {
+        doc.text(row.join(' | '), 10, y); y += 8;
+        if (y > 280) { doc.addPage(); y = 10; }
+    });
+    // footer
+    if (data.footer) {
+        y += 4;
+        doc.text(data.footer.join(' | '), 10, y);
+    }
     doc.save('saldo_horas.pdf');
 }
 
 function exportExcel() {
-    const rpt = window.__lastReport;
-    if (!rpt || !rpt.report) { alert('Calcule antes de exportar.'); return; }
-    const { headers, values, totals } = rpt.report;
-    const lines = [headers];
-    lines.push(values);
-    lines.push(['Saldo total', (totals.balanceMinutes >= 0 ? '+' : '-') + minutesToTime(Math.abs(totals.balanceMinutes))]);
+    // if table visible has data use it, otherwise try to use last generated report as fallback
+    let data = null;
+    if (tableHasData()) {
+        data = getTableData();
+    } else if (window.__lastReport && window.__lastReport.report) {
+        const rpt = window.__lastReport.report;
+        const headers = rpt.headers ? rpt.headers.slice() : [];
+        const rows = [rpt.values ? rpt.values.slice() : []];
+        const footer = rpt.totals ? [ 'Saldo total', (rpt.totals.balanceMinutes >= 0 ? '+' : '-') + minutesToTime(Math.abs(rpt.totals.balanceMinutes)) ] : null;
+        data = { headers, rows, footer };
+    }
+
+    if (!data) { alert('Calcule antes de exportar.'); return; }
+
+    const lines = [];
+    if (data.headers && data.headers.length) lines.push(data.headers);
+    data.rows.forEach(r => lines.push(r));
+    if (data.footer) lines.push(data.footer);
+
+    const csv = lines.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+
+    // build filename with date using '-' as separator: saldoHoras-DD-MM-YYYY.csv
+    function filenameWithDatetime(base) {
+        const now = new Date();
+        const pad = (n) => String(n).padStart(2, '0');
+        const d = pad(now.getDate());
+        const m = pad(now.getMonth() + 1);
+        const y = now.getFullYear();
+        // Brazilian date order: DD-MM-YYYY (no time)
+        return `${base}-${d}-${m}-${y}.csv`;
+    }
+
+    a.download = filenameWithDatetime('saldoHoras');
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    // Some browsers require user gesture; attempt to focus and click
+    a.focus();
+    a.click();
+
+    setTimeout(() => {
+        try { document.body.removeChild(a); } catch (e) {}
+        URL.revokeObjectURL(url);
+    }, 1500);
+}
+
+// ensure exportTableCsv uses same helper
+function exportTableCsv() {
+    if (!tableHasData()) { alert('Calcule antes de exportar.'); return; }
+    const data = getTableData();
+    if (!data) { alert('Tabela não encontrada para exportar.'); return; }
+    const lines = [];
+    if (data.headers && data.headers.length) lines.push(data.headers);
+    data.rows.forEach(r => lines.push(r));
+    if (data.footer) lines.push(data.footer);
     const csv = lines.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'saldo_horas.csv';
+    a.download = 'saldo_horas_table.csv';
     a.click();
 }
 
@@ -305,64 +432,6 @@ function closeDialog(modalEl) {
     currentOpener = null;
 }
 
-// wire export modal handlers
-const exportBtnEl = document.getElementById('exportBtn');
-const exportModalEl = document.getElementById('exportModal');
-const closeExportModalEl = document.getElementById('closeExportModal');
-
-// export current visible table as CSV (primary action)
-function exportTableCsv() {
-    const table = document.getElementById('hoursTable');
-    if (!table) { alert('Tabela não encontrada para exportar.'); return; }
-    const rows = [];
-    const ths = Array.from(table.querySelectorAll('thead th'));
-    if (ths.length) rows.push(ths.map(th => th.textContent.trim()));
-    const trs = Array.from(table.querySelectorAll('tbody tr'));
-    trs.forEach(tr => {
-        const cells = Array.from(tr.querySelectorAll('td')).map(td => td.textContent.trim());
-        rows.push(cells);
-    });
-    // include footer if present
-    const footRows = Array.from(table.querySelectorAll('tfoot tr'));
-    footRows.forEach(fr => {
-        const cells = Array.from(fr.querySelectorAll('td')).map(td => td.textContent.trim());
-        rows.push(cells);
-    });
-    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'saldo_horas_table.csv';
-    a.click();
-}
-
-if (exportBtnEl) {
-    // normal click -> export CSV directly
-    exportBtnEl.addEventListener('click', (e) => {
-        if (e.shiftKey) {
-            // shift+click opens modal for format selection
-            openDialog(exportModalEl, exportBtnEl);
-        } else {
-            exportTableCsv();
-        }
-    });
-}
-if (closeExportModalEl) closeExportModalEl.addEventListener('click', () => closeDialog(exportModalEl));
-
-// modal option buttons for export
-const modalOptionButtons = document.querySelectorAll('#exportModal .modal-option');
-modalOptionButtons.forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        const type = e.currentTarget.getAttribute('data-type');
-        closeDialog(exportModalEl);
-        if (type === 'txt') exportTxt();
-        if (type === 'pdf') exportPdf();
-        if (type === 'csv') exportTableCsv();
-    });
-});
-
-if (exportModalEl) exportModalEl.addEventListener('click', (e) => { if (e.target === exportModalEl) closeDialog(exportModalEl); });
-
 // wire clear modal handlers
 const clearBtnEl2 = document.getElementById('clearBtn');
 const clearModalEl = document.getElementById('clearModal');
@@ -405,6 +474,23 @@ if (clearSelectedBtnEl) clearSelectedBtnEl.addEventListener('click', () => {
 // ensure calculate button is bound (safe)
 const calculateBtnEl = document.getElementById('calculateBtn');
 if (calculateBtnEl) calculateBtnEl.addEventListener('click', calculateExitTime);
+
+// New: trigger calculation when user presses Enter while focusing any input inside the left panel
+document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    const active = document.activeElement;
+    if (!active) return;
+    // don't trigger when focus is on a button or link
+    const tag = active.tagName && active.tagName.toUpperCase();
+    if (tag === 'BUTTON' || tag === 'A') return;
+    // if focus is inside the left column inputs, run calculate
+    const leftPane = active.closest && active.closest('.left');
+    if (leftPane) {
+        e.preventDefault();
+        // call the same handler as the button
+        calculateExitTime();
+    }
+});
 
 // calculateExitTime: compute expected exit based on inputs, update UI, render table and save record
 function calculateExitTime() {
@@ -464,15 +550,34 @@ function calculateExitTime() {
     const expectedExitMinutes = (lunchEndMinutes + remainingNeeded + overtimeMinutes) % (24*60);
     const expectedExitStr = minutesToTime(expectedExitMinutes);
 
-    let afternoonWorked = remainingNeeded + overtimeMinutes; // projected
+    // Determine actual afternoon worked and what to display in the table for Hora de saída.
+    // Calculation rules:
+    // - If user provided an actual exit, use it for calculation and display.
+    // - If user did NOT provide actual exit:
+    //    * calculations assume they left at expected exit (no extra paid hours)
+    //    * but if Horas extras was filled, display in the table the expected exit plus extras so the user sees the planned extra time
     let actualExitStr = '';
+    let afternoonWorked = 0;
+    let displayedActualExit = '';
     if (actualExit) {
         actualExitStr = actualExit;
+        displayedActualExit = actualExit;
         const actualExitM = timeToMinutes(actualExit);
         // compute afternoon worked using lunchEndMinutes -> actualExitM
         let aft = actualExitM - lunchEndMinutes;
         if (aft < 0) aft += 24*60;
         afternoonWorked = Math.max(0, aft);
+    } else {
+        // no actual exit provided: calculations assume expected exit (no overtime paid)
+        actualExitStr = expectedExitStr;
+        afternoonWorked = remainingNeeded; // only the needed minutes (no overtime)
+        // display extras in table if extras were provided
+        if (overtimeMinutes > 0) {
+            const dispExitMinutes = (expectedExitMinutes + overtimeMinutes) % (24*60);
+            displayedActualExit = minutesToTime(dispExitMinutes);
+        } else {
+            displayedActualExit = expectedExitStr;
+        }
     }
 
     const balanceMinutes = workedBeforeLunch + afternoonWorked - requiredMinutes;
@@ -485,9 +590,20 @@ function calculateExitTime() {
     const report = buildReport({ workedBeforeLunch, afternoonWorked, overtimeMinutes, requiredMinutes, expectedExit: expectedExitStr, actualExit: actualExitStr || null });
     renderTableReport(report);
 
-    // persist input values and add record
+    // persist input values and add record (pass the report so exports can use it)
     saveData();
-    addRecordAndRender({ workedBeforeLunch, afternoonWorked, overtimeMinutes, requiredMinutes, expectedExit: expectedExitStr, actualExit: actualExitStr || null });
+    addRecordAndRender({
+        workedBeforeLunch,
+        afternoonWorked,
+        overtimeMinutes,
+        requiredMinutes,
+        expectedExit: expectedExitStr,
+        actualExit: actualExitStr || null,
+        startWorkVal: startWork,
+        lunchStartVal: lunchStart,
+        lunchEndVal: lunchEnd,
+        actualExitVal: displayedActualExit
+    }, report);
 }
 
 // show signature on load with animation and accessible label
@@ -542,9 +658,15 @@ function populateClearModalList() {
         cb.type = 'checkbox';
         cb.value = r.id;
         cb.setAttribute('data-id', r.id);
-        cb.setAttribute('aria-label', `Selecionar registro ${r.id} - ${r.date}`);
+        // show date-only in the label for clarity
+        let displayDate = r.dateDisplay || '';
+        try {
+            const dt = r.date ? new Date(r.date) : null;
+            if (dt && !isNaN(dt)) displayDate = formatBrazilDate(dt);
+        } catch (err) { /* ignore */ }
+        cb.setAttribute('aria-label', `Selecionar registro ${r.id} - ${displayDate}`);
         const span = document.createElement('span');
-        span.textContent = `ID ${r.id} — ${r.date} — Saldo: ${r.balanceDisplay}`;
+        span.textContent = `ID ${r.id} — ${displayDate} — Saldo: ${r.balanceDisplay}`;
         label.appendChild(cb);
         label.appendChild(span);
         container.appendChild(label);
@@ -563,3 +685,69 @@ window.__recordsCache = loadRecords();
     window.__recordsCache = records.slice();
     if (records && records.length) renderRecordsTable(records);
 })();
+
+// wire Export button to CSV-only export
+const exportBtn = document.getElementById('exportBtn');
+if (exportBtn) exportBtn.addEventListener('click', (e) => { e.preventDefault(); exportExcel(); });
+
+function tableHasData() {
+    const table = document.getElementById('hoursTable');
+    if (!table) return false;
+    const bodyRows = table.querySelectorAll('tbody tr');
+    // consider table has data if there's at least one row with at least one non-empty cell
+    for (const r of bodyRows) {
+        const cells = Array.from(r.querySelectorAll('td')).map(td => td.textContent.trim());
+        if (cells.some(c => c !== '')) return true;
+    }
+    return false;
+}
+
+function getTableData() {
+    const table = document.getElementById('hoursTable');
+    if (!table) return null;
+
+    // Helper: expand a table row into an array of cell text values taking colspan into account
+    function expandRow(tr) {
+        const cells = Array.from(tr.querySelectorAll('th,td'));
+        const out = [];
+        cells.forEach(cell => {
+            const colspan = parseInt(cell.getAttribute('colspan') || '1', 10) || 1;
+            const text = cell.textContent.trim();
+            out.push(text);
+            // insert empty placeholders for spanned columns so the resulting array reflects visual columns
+            for (let i = 1; i < colspan; i++) out.push('');
+        });
+        return out;
+    }
+
+    // Collect header rows (if multiple thead rows exist we'll concatenate them)
+    const theadRows = Array.from(table.querySelectorAll('thead tr'));
+    let headers = [];
+    if (theadRows.length > 0) {
+        theadRows.forEach(tr => {
+            const expanded = expandRow(tr);
+            headers = headers.concat(expanded);
+        });
+    }
+
+    // Collect body rows
+    const bodyRows = Array.from(table.querySelectorAll('tbody tr'));
+    const rows = bodyRows.map(tr => expandRow(tr));
+
+    // Collect footer row (single)
+    const footTr = table.querySelector('tfoot tr');
+    const footer = footTr ? expandRow(footTr) : null;
+
+    // Determine expected column count (max of header, any row, footer)
+    const counts = [headers.length, ...(rows.map(r => r.length)), (footer ? footer.length : 0)];
+    const columns = Math.max(0, ...counts);
+
+    // Normalize lengths by padding with empty strings so every row has the same number of columns
+    if (headers.length === 0 && columns > 0) headers = Array(columns).fill('');
+    if (headers.length < columns) headers = headers.concat(Array(columns - headers.length).fill(''));
+
+    const normRows = rows.map(r => (r.length < columns ? r.concat(Array(columns - r.length).fill('')) : r.slice(0, columns)));
+    const normFooter = footer ? (footer.length < columns ? footer.concat(Array(columns - footer.length).fill('')) : footer.slice(0, columns)) : null;
+
+    return { headers, rows: normRows, footer: normFooter };
+}

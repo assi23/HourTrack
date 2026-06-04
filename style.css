@@ -108,12 +108,19 @@ button:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(231,126
 
 #calculateBtn {
     margin-top: 8px;
-    width: auto; /* don't stretch full width on larger screens */
-    padding: 6px 10px; /* smaller click area */
-    font-size: 13px; /* slightly smaller text */
-    max-width: 160px; /* limit how wide it can grow */
-    align-self: flex-start; /* keep it left-aligned with inputs */
+    width: auto;
+    padding: 12px 18px; /* larger click area */
+    font-size: 15px; /* slightly larger text */
+    max-width: 220px;
+    align-self: flex-start;
+    border-radius: 10px;
+    background: linear-gradient(90deg,#ff4d8a 0%, #ff77bd 100%);
+    color: #fff;
+    box-shadow: 0 12px 32px rgba(231,126,166,0.16);
+    border: 1px solid rgba(255,255,255,0.18);
 }
+
+#calculateBtn:hover { transform: translateY(-3px) scale(1.01); }
 
 .result {
     margin-top: 18px;

@@ -33,22 +33,22 @@
 
             <div class="form-group">
                 <label>Início do trabalho</label>
-                <input type="time" id="startWork">
+                <input type="time" id="startWork" value="08:00">
             </div>
 
             <div class="form-group">
                 <label>Início do almoço</label>
-                <input type="time" id="lunchStart">
+                <input type="time" id="lunchStart" value="11:30">
             </div>
 
             <div class="form-group">
                 <label>Término do almoço (retorno ao trabalho)</label>
-                <input type="time" id="lunchEnd">
+                <input type="time" id="lunchEnd" value="13:00">
             </div>
 
             <div class="form-group">
                 <label>Hora de saída (real) — opcional para cálculo exato</label>
-                <input type="time" id="actualExit">
+                <input type="time" id="actualExit" value="17:00">
             </div>
 
             <div class="form-group">
@@ -56,7 +56,7 @@
                 <input type="time" id="extraHours" value="00:00">
             </div>
 
-            <button id="calculateBtn">Calcular</button>
+            <button id="calculateBtn">CALCULAR</button>
 
             <div class="result">
                 <h3>Hora esperada / saída real</h3>
@@ -81,31 +81,16 @@
             </table>
 
             <div class="table-actions">
-                <button id="exportBtn" class="primary" aria-haspopup="dialog" aria-controls="exportModal">
+                <button id="exportBtn" class="primary" type="button">
                     <!-- icon: export (decorative) -->
                     <svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M5 20h14v-2H5v2zm7-18L5.33 9h3.67v6h6V9h3.67L12 2z"/></svg>
-                    <span>Exportar</span>
+                    <span>EXPORTAR(CSV)</span>
                 </button>
                 <button id="clearBtn" class="secondary">
                     <!-- icon: clear (decorative) -->
                     <svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                    <span>Limpar</span>
+                    <span>LIMPAR</span>
                 </button>
-            </div>
-        </div>
-    </div>
-    <!-- Export modal -->
-    <div id="exportModal" class="modal-overlay" aria-hidden="true" role="dialog" aria-modal="true">
-        <div class="modal" role="document">
-            <h4>Exportar relatório</h4>
-            <p>Escolha o formato de exportação:</p>
-            <div class="modal-actions">
-                <button data-type="txt" class="modal-option">TXT</button>
-                <button data-type="pdf" class="modal-option">PDF</button>
-                <button data-type="csv" class="modal-option">Excel (CSV)</button>
-            </div>
-            <div class="modal-close">
-                <button id="closeExportModal">Cancelar</button>
             </div>
         </div>
     </div>
