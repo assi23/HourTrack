@@ -1,360 +1,181 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+/* Global reset */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root{
+    --pink-50: #fff7fb;
+    --pink-100: #ffd6ea;
+    --pink-200: #ffb6d1;
+    --pink-300: #ff77bd;
+    --pink-400: #ff5fa8;
+    --accent: #c2185b; /* confident darker pink for emphasis */
+    --muted-text: #4b3a3f; /* warm neutral for labels */
+    --bg: #f6c1d3; /* page background (user requested kept) */
+    --card-shadow: 0 10px 30px rgba(179,99,130,0.08);
+    --radius: 12px;
+    --gap: 18px;
+    --max-width: 1800px; /* increased so main content can grow larger */
+    --surface: #ffffff;
 }
 
-body {
-    font-family: Arial, sans-serif;
-    /* darker pastel pink background for the page */
-    background:  #f6c1d3;
-    display: flex;
-    justify-content: center;
-    padding: 24px;
-    color: #2a2a2a; /* slightly warm neutral for text for good contrast */
+html,body{ height:100%; }
+body{
+    font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    background: linear-gradient(180deg, var(--bg) 0%, #fbeaf0 100%);
+    color: #222;
+    padding: 28px;
+    display:flex;
+    justify-content:center;
 }
 
-.container {
-    /* very light pink card to sit above the darker page background */
-    background: #fff7fb;
-    width: 100%;
-    max-width: 1400px; /* increased to allow wider table */
-    padding: 24px;
-    border-radius: 12px;
-    /* softer, warm shadow to match pastel aesthetic */
-    box-shadow: 0 10px 30px rgba(179,99,130,0.08);
-    /* use CSS grid to prevent left column content from overlapping the right table */
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 520px; /* larger right column to fit table */
-    gap: 32px;
-    align-items: start;
+.app-shell{ width:100%; max-width:var(--max-width); padding:12px; }
+
+/* Ensure main container contains its children and nothing bleeds out */
+.container{
+    display:grid; grid-template-columns: 1fr 900px; gap:28px; align-items:start;
+    background:var(--pink-50); padding:28px; border-radius:var(--radius); box-shadow:var(--card-shadow);
+    position:relative;
+    overflow: visible; /* allow container to expand beyond viewport so user can visualize large tables */
 }
 
-.left { min-width: 0; /* allow shrinking without overflowing */ }
-
-/* ensure table never sits on top of left inputs */
-.right { z-index: 1; position: relative; }
-
-/* Make the right column expand to show the whole table (no internal scrolling) */
-.right { overflow: visible; max-height: none; }
-
-h1 {
-    margin-bottom: 20px;
-    text-align: left;
-    font-size: 1.4rem;
+/* Header */
+.app-header{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:16px; margin-bottom:var(--gap);
 }
+.brand{ display:flex; align-items:center; gap:12px; }
+.brand .logo{ font-size:28px; }
+.brand h1{ font-size:1.1rem; color:var(--muted-text); }
+.brand .subtitle{ font-size:0.85rem; color:rgba(75,58,63,0.7); }
 
-h2 {
-    margin: 16px 0;
-}
+.header-actions{ display:flex; gap:10px; }
 
-.form-group {
-    margin-bottom: 12px;
-}
+/* Buttons system */
+.btn{ display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; cursor:pointer; border:1px solid transparent; font-weight:600; font-size:0.92rem; }
+.btn svg.icon{ opacity:0.95; }
 
-label {
-    display: block;
-    margin-bottom: 6px;
-    font-weight: 600;
-    /* warm dark gray for readable labels */
-    color: #42343a;
-}
+.btn-primary{ background: linear-gradient(90deg,var(--pink-400),var(--pink-300)); color:#fff; box-shadow: 0 8px 24px rgba(231,126,166,0.12); }
+.btn-ghost{ background:transparent; color:var(--accent); border-color: transparent; }
+.btn-outline{ background:var(--pink-100); color:var(--muted-text); border:1px solid rgba(0,0,0,0.04); }
 
-input[type="time"] {
-    width: 100%; /* responsive: fill available column */
-    max-width: 220px; /* keep inputs reasonable width */
-    padding: 8px;
-    /* subtle pink border to reinforce palette */
-    border: 1px solid #f0c8d6;
-    border-radius: 6px;
-    box-sizing: border-box;
-    background: #ffffff;
-}
+.btn:focus{ outline: 3px solid rgba(255,95,168,0.14); outline-offset:2px; }
 
-input[type="time"]:focus {
-    outline: 3px solid rgba(255,95,168,0.14); /* gentle pink focus ring */
-    outline-offset: 2px;
-}
-
-button {
-    padding: 10px 14px;
-    border: none;
-    /* default button uses a soft pastel pink */
-    background: #ff5fa8;
-    color: white;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
-    box-shadow: 0 6px 18px rgba(231,126,166,0.12);
-}
-
-button.secondary {
-    background: #f3b6c9; /* muted pastel pink for secondary actions */
-    color: #2b1e23;
-}
-
-button.primary {
-    background: #f3b6c9;
-    color: #2b1e23; /* stronger pink for primary actions */
-}
-
-button:focus {
-    outline: 3px solid rgba(255,95,168,0.22);
-    outline-offset: 2px;
-}
-
-button:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(231,126,166,0.14); }
-
+/* Center text inside the primary Calculate button specifically */
 #calculateBtn {
-    margin-top: 8px;
-    width: auto;
-    padding: 12px 18px; /* larger click area */
-    font-size: 15px; /* slightly larger text */
-    max-width: 220px;
-    align-self: flex-start;
-    border-radius: 10px;
-    background: linear-gradient(90deg,#ff4d8a 0%, #ff77bd 100%);
-    color: #fff;
-    box-shadow: 0 12px 32px rgba(231,126,166,0.16);
-    border: 1px solid rgba(255,255,255,0.18);
+    /* keep minimum width for comfortable tap target */
+    min-width: 140px;
+    /* ensure the button content (text) is centered horizontally */
+    justify-content: center; /* works because .btn uses inline-flex */
+    padding: 12px 18px;
 }
 
-#calculateBtn:hover { transform: translateY(-3px) scale(1.01); }
+/* Cards */
+.card{ background:var(--surface); border-radius:10px; padding:16px; box-shadow: 0 4px 18px rgba(20,20,20,0.03); }
+.card-header{ margin-bottom:12px; }
+.card-header h2{ font-size:1rem; color:var(--muted-text); }
+.card-header .muted{ color:rgba(75,58,63,0.6); font-size:0.85rem; margin-top:6px; }
 
-.result {
-    margin-top: 18px;
+/* Form layout */
+.form-grid{ display:flex; flex-direction:column; gap:12px; }
+.row{ display:flex; gap:12px; }
+.row .form-group{ flex:1; min-width:0; }
+.form-group{ display:flex; flex-direction:column; gap:6px; }
+label{ font-size:0.92rem; color:var(--muted-text); font-weight:600; }
+input[type="time"], input[type="search"]{
+    padding:10px 12px; border-radius:8px; border:1px solid #f0c8d6; background:#fff; font-size:0.97rem; color:#222;
+}
+input[type="search"]{ width:100%; }
+
+input[type="time"]:focus, input[type="search"]:focus{ box-shadow: 0 6px 20px rgba(255,95,168,0.08); outline: none; }
+
+.form-actions{ display:flex; gap:16px; align-items:center; margin-top:8px; }
+.result{ margin-left:auto; text-align:right; }
+.result-title{ font-size:0.85rem; color:rgba(34,34,34,0.6); }
+.result-value{ font-size:1.6rem; color:var(--accent); font-weight:700; }
+
+/* Panel (right column) */
+.card-panel{ display:flex; flex-direction:column; gap:12px; }
+.panel-controls{ display:flex; gap:12px; align-items:center; }
+.search{ flex:1; }
+.summary{ display:flex; gap:12px; }
+.summary-item{ background:linear-gradient(90deg,#fff 0%, #fff0f6 100%); padding:8px 10px; border-radius:8px; min-width:90px; }
+.summary-item .label{ font-size:0.75rem; color:rgba(75,58,63,0.7); }
+.summary-item .value{ font-weight:700; color:var(--muted-text); margin-top:4px; }
+
+.table-wrap{
+    overflow: visible; /* keep table visible, page will scroll if needed */
+    max-height: none;
+    height: auto;
 }
 
-.result p {
-    font-size: 1.8rem;
-    /* use a confident darker pink for results while keeping legibility */
-    color: #c2185b;
-    font-weight: 700;
+#hoursTable{ width:100%; border-collapse:collapse; margin-top:6px; min-width:0; table-layout: fixed; }
+
+#hoursTable th, #hoursTable td{ padding:8px 10px; border-bottom:1px solid #f3e9ef; text-align:left; white-space:normal; word-break:break-word; font-size:0.95rem; }
+
+/* Remove previous nowrap override and ensure table cells can wrap */
+#hoursTable th, #hoursTable td { white-space: normal !important; }
+
+@media (max-width:1000px){
+    .container{ grid-template-columns: 1fr; }
+    .card-panel{ order:2; }
+    .card-form{ order:1; }
+    .panel-controls{ flex-direction:column; align-items:stretch; }
+    .table-wrap{ max-height: none; overflow: visible; }
 }
 
-#hoursTable {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 12px;
-    table-layout: fixed;
-    word-break: break-word;
+/* Modal kept mostly same but refined */
+.modal-overlay{ display:none; position:fixed; inset:0; align-items:center; justify-content:center; padding:18px; z-index:3000; }
+.modal-overlay[aria-hidden="false"]{ display:flex; background: rgba(0,0,0,0.36); }
+
+.modal-card{ background:var(--surface); padding:18px; border-radius:12px; width:560px; max-width:calc(100% - 40px); box-shadow:0 20px 60px rgba(0,0,0,0.16); display:flex; flex-direction:column; gap:12px; }
+.modal-header{ display:flex; gap:12px; align-items:center; }
+.modal-header .modal-icon{ font-size:28px; }
+.modal-header h3{ margin:0; font-size:1.05rem; color:var(--muted-text); }
+.modal-header .muted{ color:rgba(75,58,63,0.6); font-size:0.9rem; margin-top:4px; }
+
+.modal-body{ display:flex; flex-direction:column; gap:12px; }
+.modal-controls{ display:flex; gap:12px; align-items:center; }
+.modal-controls .select-all{ display:flex; align-items:center; gap:8px; font-weight:600; color:var(--muted-text); }
+.modal-controls input[type="search"]{ flex:1; padding:10px 12px; border-radius:8px; border:1px solid #f0c8d6; }
+
+.clear-list{ display:flex; flex-direction:column; gap:8px; max-height:280px; overflow:auto; padding-right:6px; }
+.clear-list .clear-item{ display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:8px; border:1px solid rgba(0,0,0,0.04); background:linear-gradient(90deg,#fff,#fff7fb); }
+.clear-list .clear-item .meta{ display:flex; flex-direction:column; gap:4px; }
+.clear-list .clear-item .meta .date{ font-weight:700; color:var(--muted-text); }
+.clear-list .clear-item .meta .note{ font-size:0.9rem; color:rgba(75,58,63,0.6); }
+
+.modal-footer{ display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.modal-actions{ display:flex; gap:10px; }
+.modal-btn{ padding:10px 14px; border-radius:10px; font-weight:700; cursor:pointer; border:none; }
+.modal-btn-ghost{ background:transparent; color:var(--muted-text); border:1px solid rgba(0,0,0,0.06); }
+.modal-btn-primary{ background: linear-gradient(90deg,var(--pink-400),var(--pink-300)); color:#fff; }
+.modal-btn-danger{ background: #ff6b86; color:#fff; box-shadow: 0 8px 28px rgba(255,95,168,0.12); }
+
+/* ensure modal is usable on small screens */
+@media (max-width:600px){
+    .modal-card{ width:100%; padding:14px; }
+    .clear-list{ max-height:220px; }
 }
 
-#hoursTable thead tr th { font-size: 0.95rem; }
-#hoursTable tbody tr td { padding: 10px; }
-#hoursTable tfoot td { font-weight: 700; padding: 10px; border-top: 2px solid #e6e6e6; }
+/* Accessibility helpers */
+.sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; }
 
-#hoursTable th, #hoursTable td {
-    border: 1px solid #e6e6e6;
-    padding: 8px;
-    text-align: left;
-    overflow: visible; /* allow content to expand instead of hiding */
-    text-overflow: clip;
-    white-space: normal; /* allow wrapping so full content is visible */
+/* Selectable row styles */
+#hoursTable tbody tr.selectable{ cursor:pointer; }
+#hoursTable tbody tr.row-selected{ background: rgba(255,95,168,0.08); outline:2px dashed rgba(255,95,168,0.16); }
+
+/* Responsive */
+@media (max-width:1000px){
+    .container{ grid-template-columns: 1fr; }
+    .card-panel{ order:2; }
+    .card-form{ order:1; }
+    .panel-controls{ flex-direction:column; align-items:stretch; }
+    .table-wrap{ max-height: none; overflow: visible; }
 }
 
-#hoursTable th {
-    background: #fff0f6; /* very light pink header */
-    font-weight: 600;
-}
+@media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
 
-#hoursTable tfoot td.positive { color: #0b6623; background: rgba(11,102,35,0.06); }
-#hoursTable tfoot td.negative { color: #b00020; background: rgba(176,0,32,0.04); }
+/* Small adjustments to ensure compatibility with existing JS expecting certain classes/ids */
+#calculateBtn{ min-width:120px; }
+#hoursTable th, #hoursTable td{ white-space:nowrap; }
 
-.table-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 16px;
-    align-items: center;
-}
-
-.table-actions { margin-top: 18px; display:flex; gap:12px; }
-
-.table-actions button {
-    flex: 1 1 auto;
-    padding: 8px 10px;
-    border-radius: 8px;
-}
-
-/* modal */
-.modal-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.0); /* start transparent for fade */
-    align-items: center;
-    justify-content: center;
-    transition: background 180ms ease;
-    z-index: 2000; /* ensure modal overlay sits above page content (e.g. tables, signature) */
-    padding: 12px; /* small padding so modal doesn't touch viewport edges on small screens */
-}
-
-.modal-overlay[aria-hidden="false"] {
-    display: flex;
-    background: rgba(0,0,0,0.45); /* slightly stronger backdrop when open */
-}
-
-.modal {
-    background: white;
-    padding: 16px 18px;
-    border-radius: 8px;
-    width: 420px;
-    max-width: calc(100% - 48px);
-    max-height: 80vh; /* keep modal within viewport */
-    overflow: auto; /* scroll internally when content is long */
-    box-shadow: 0 6px 30px rgba(0,0,0,0.12);
-    transform: translateY(-8px) scale(0.98);
-    opacity: 0;
-    transition: transform 180ms cubic-bezier(.2,.8,.2,1), opacity 180ms ease;
-}
-
-.modal-overlay[aria-hidden="false"] .modal {
-    transform: translateY(0) scale(1);
-    opacity: 1;
-}
-
-/* improve spacing for clear modal list items */
-#clearModal .clear-options { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
-#clearModal .clear-options label.clear-record-item { display:flex; gap:8px; align-items:center; background: #fff; padding:6px 8px; border-radius:6px; border:1px solid rgba(0,0,0,0.04); }
-#clearModal .clear-options label.clear-record-item input[type="checkbox"] { flex: 0 0 auto; }
-#clearModal .clear-options label.clear-record-item span { flex: 1 1 auto; font-size:0.95rem; color:#111; }
-
-/* signature: pastel pink gradient to match the new theme */
-.signature {
-    position: fixed;
-    left: 16px;
-    bottom: 16px;
-    background: linear-gradient(90deg, #ff77bd 0%, #ffd6ea 100%);
-    color: #ffffff;
-    padding: 8px 14px;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(179,99,130,0.12);
-    z-index: 1400;
-    display: inline-flex;
-    gap: 10px;
-    align-items: center;
-    font-size: 0.95rem;
-    transform: translateY(12px) scale(0.98);
-    opacity: 0;
-    transition: transform 320ms cubic-bezier(.2,.8,.2,1), opacity 320ms ease;
-    pointer-events: auto;
-    border: 1px solid rgba(255,255,255,0.12);
-}
-.signature .heart { font-size: 1.1rem; color: #ffffff; filter: drop-shadow(0 1px 0 rgba(0,0,0,0.12)); }
-.signature strong { color: #ffffff; font-weight: 700; }
-.signature.show {
-    transform: translateY(0) scale(1);
-    opacity: 1;
-}
-
-/* toggle button */
-.signature .sig-toggle {
-    margin-left: 8px;
-    background: transparent;
-    border: none;
-    color: rgba(255,255,255,0.95);
-    font-size: 1rem;
-    cursor: pointer;
-    padding: 6px;
-    border-radius: 6px;
-}
-.signature .sig-toggle:focus { outline: 2px solid rgba(255,255,255,0.18); }
-
-/* collapsed state */
-.signature.collapsed {
-    width: 44px;
-    height: 44px;
-    padding: 6px;
-    border-radius: 50%;
-    justify-content: center;
-}
-.signature.collapsed .sig-text { display: none; }
-.signature.collapsed .sig-toggle { transform: rotate(-90deg); }
-
-@media (prefers-reduced-motion: reduce) {
-    .signature { transform: none !important; opacity: 1 !important; transition: none !important; }
-}
-
-@media (max-width: 480px) {
-    .signature {
-        /* keep bottom-left on small screens (user requested left side footer) */
-        left: 16px;
-        transform: translateY(0) scale(1);
-        width: auto;
-        max-width: calc(100% - 32px);
-        justify-content: flex-start;
-    }
-}
-
-@media (max-width: 800px) {
-    .container {
-        display: block; /* stack columns on small screens */
-        padding: 16px;
-    }
-    .right {
-        flex: none;
-        width: 100%;
-        border-left: none;
-        border-top: 1px solid #eee;
-        padding-left: 0;
-        padding-top: 16px;
-        margin-top: 12px;
-    }
-    input[type="time"] {
-        width: 100%;
-    }
-    #calculateBtn { width: 100%; }
-    .signature { margin-top: 12px; font-size: 0.85rem; justify-content: center; }
-}
-
-/* selectable row styles */
-#hoursTable tbody tr.selectable { cursor: pointer; }
-#hoursTable tbody tr.row-selected { background: rgba(255,95,168,0.08); outline: 2px dashed rgba(255,95,168,0.16); }
-
-#hoursTable tbody tr.selectable:focus { outline: 3px solid rgba(255,95,168,0.12); }
-
-/* layout: row for top inputs */
-.row { display:flex; gap:16px; align-items:center; }
-.row .form-group { flex: 1; min-width: 0; }
-
-/* container grid already set; ensure table doesn't overflow */
-#hoursTable { table-layout: fixed; word-break: break-word; }
-#hoursTable th, #hoursTable td { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-/* make the right column scroll internally if table is large */
-.right { overflow: auto; max-height: 60vh; }
-
-/* ensure export button looks clickable */
-.table-actions { align-items: stretch; }
-/* Overrides to ensure the table is fully visible without internal scrolling */
-.container {
-    /* increase right column to give table more horizontal space */
-    grid-template-columns: minmax(0, 1fr) 900px !important;
-    max-width: 1800px !important;
-}
-
-.right {
-    /* allow the right column to expand so the page scrolls instead of the div */
-    overflow: visible !important;
-    max-height: none !important;
-}
-
-/* ensure table cells wrap and show all content (remove truncation) */
-#hoursTable th, #hoursTable td {
-    overflow: visible !important;
-    text-overflow: clip !important;
-    white-space: normal !important;
-}
-
-/* Clear modal - improve spacing between action buttons and cancel button */
-#clearModal .modal-actions { margin-top:12px; display:flex; gap:12px; flex-wrap:wrap; }
-#clearModal .modal-close { margin-top:18px; display:flex; justify-content:flex-end; }
-#clearModal .modal-close button { padding:8px 12px; border-radius:8px; background:#6b7280; color:#fff; border:none; }
-
-/* Ensure the modal actions don't look cramped on small screens */
-@media (max-width: 420px) {
-    #clearModal .modal-actions { flex-direction: column; gap:10px; }
-    #clearModal .modal-close { justify-content: stretch; }
-    #clearModal .modal-close button { width: 100%; }
-}
+/* End of file */

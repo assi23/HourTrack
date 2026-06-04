@@ -475,25 +475,32 @@ if (clearSelectedBtnEl) clearSelectedBtnEl.addEventListener('click', () => {
 const calculateBtnEl = document.getElementById('calculateBtn');
 if (calculateBtnEl) calculateBtnEl.addEventListener('click', calculateExitTime);
 
-// New: trigger calculation when user presses Enter while focusing any input inside the left panel
-document.addEventListener('keydown', (e) => {
-    if (e.key !== 'Enter') return;
-    const active = document.activeElement;
-    if (!active) return;
-    // don't trigger when focus is on a button or link
-    const tag = active.tagName && active.tagName.toUpperCase();
-    if (tag === 'BUTTON' || tag === 'A') return;
-    // if focus is inside the left column inputs, run calculate
-    const leftPane = active.closest && active.closest('.left');
-    if (leftPane) {
+// Form-level Enter key handler: triggers calculation when Enter is pressed inside the main form
+// This is the single reliable handler we keep to avoid duplicate calls
+(function attachFormEnterHandler(){
+    const formEl = document.querySelector('.card-form form');
+    if (!formEl) return;
+    formEl.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        const active = document.activeElement;
+        if (!active) return;
+        const tag = active.tagName && active.tagName.toUpperCase();
+        if (tag === 'BUTTON' || tag === 'A' || active.isContentEditable) return;
+        // don't trigger when focus is inside modal
+        if (active.closest && active.closest('.modal-card')) return;
         e.preventDefault();
-        // call the same handler as the button
         calculateExitTime();
-    }
-});
+    });
+})();
 
 // calculateExitTime: compute expected exit based on inputs, update UI, render table and save record
 function calculateExitTime() {
+    // prevent multiple rapid calls (e.g., from multiple Enter handlers)
+    if (window.__calculating) return;
+    window.__calculating = true;
+    const releaseCalc = () => { window.__calculating = false; if (calculateBtnEl) calculateBtnEl.disabled = false; };
+    if (calculateBtnEl) calculateBtnEl.disabled = true;
+
     const dailyHoursEl = document.getElementById('dailyHours');
     const lunchTimeEl = document.getElementById('lunchTime');
     const startWorkEl = document.getElementById('startWork');
@@ -510,7 +517,7 @@ function calculateExitTime() {
     const actualExit = actualExitEl ? actualExitEl.value : '';
     const extraHours = extraHoursEl ? extraHoursEl.value : '';
 
-    if (!startWork) { alert('Informe o início do trabalho.'); return; }
+    if (!startWork) { alert('Informe o início do trabalho.'); releaseCalc(); return; }
 
     const requiredMinutes = timeToMinutes(dailyHours || '00:00');
     const lunchDuration = timeToMinutes(lunchTime || '00:00');
@@ -592,18 +599,63 @@ function calculateExitTime() {
 
     // persist input values and add record (pass the report so exports can use it)
     saveData();
-    addRecordAndRender({
-        workedBeforeLunch,
-        afternoonWorked,
-        overtimeMinutes,
-        requiredMinutes,
-        expectedExit: expectedExitStr,
-        actualExit: actualExitStr || null,
-        startWorkVal: startWork,
-        lunchStartVal: lunchStart,
-        lunchEndVal: lunchEnd,
-        actualExitVal: displayedActualExit
-    }, report);
+
+    // signature to detect immediate duplicates (in addition to recent-duplicate check)
+    const signature = [String(startWork), String(lunchStart), String(lunchEnd), String(displayedActualExit), String(expectedExitStr), String(extraHours || '')].join('|');
+    if (window.__lastAddedSig === signature && (Date.now() - (window.__lastAddedAt || 0)) < 3000) {
+        // duplicate within short interval: refresh table only and release guard
+        const records = loadRecords();
+        renderRecordsTable(records);
+        releaseCalc();
+        return;
+    }
+
+    // avoid creating duplicate records when user presses Enter repeatedly
+    const dup = isRecentDuplicate({ startWorkVal: startWork, lunchStartVal: lunchStart, lunchEndVal: lunchEnd, displayedActualExit: displayedActualExit, expectedExitStr });
+    if (!dup) {
+        addRecordAndRender({
+            workedBeforeLunch,
+            afternoonWorked,
+            overtimeMinutes,
+            requiredMinutes,
+            expectedExit: expectedExitStr,
+            actualExit: actualExitStr || null,
+            startWorkVal: startWork,
+            lunchStartVal: lunchStart,
+            lunchEndVal: lunchEnd,
+            actualExitVal: displayedActualExit
+        }, report);
+        window.__lastAddedSig = signature;
+        window.__lastAddedAt = Date.now();
+    } else {
+        // refresh table rendering only (do not add new record)
+        const records = loadRecords();
+        renderRecordsTable(records);
+    }
+
+    // release guard after a short delay so accidental double-presses won't duplicate
+    setTimeout(releaseCalc, 350);
+}
+
+// helper: detect recent duplicate record to avoid multiple inserts when Enter is pressed repeatedly
+function isRecentDuplicate({ startWorkVal, lunchStartVal, lunchEndVal, displayedActualExit, expectedExitStr }) {
+    try {
+        const records = loadRecords();
+        if (!records || records.length === 0) return false;
+        const last = records[records.length - 1];
+        // consider duplicate if same start/lunch/exit/expected and created within 5 seconds
+        const sameStart = (String(last.startWork || '') === String(startWorkVal || ''));
+        const sameLunchStart = (String(last.lunchStart || '') === String(lunchStartVal || ''));
+        const sameLunchEnd = (String(last.lunchEnd || '') === String(lunchEndVal || ''));
+        const sameActualExit = (String(last.actualExit || '') === String(displayedActualExit || ''));
+        const sameExpected = (String(last.expectedExit || '') === String(expectedExitStr || '')) || (String(last.expectedExit || '') === String(expectedExitStr || ''));
+        const createdAt = last.date ? new Date(last.date).getTime() : 0;
+        const now = Date.now();
+        const within = (now - createdAt) < 5000; // 5 seconds
+        return sameStart && sameLunchStart && sameLunchEnd && sameActualExit && sameExpected && within;
+    } catch (e) {
+        return false;
+    }
 }
 
 // show signature on load with animation and accessible label
