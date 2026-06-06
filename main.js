@@ -339,13 +339,12 @@ function exportExcel() {
     data.rows.forEach(r => lines.push(r));
     if (data.footer) lines.push(data.footer);
 
-    const csv = lines.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
+    // Create workbook and add worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(lines);
+    XLSX.utils.book_append_sheet(wb, ws, "Saldo");
 
-    // build filename with date using '-' as separator: saldoHoras-DD-MM-YYYY.csv
+    // build filename with date using '-' as separator: saldoHoras-DD-MM-YYYY.xlsx
     function filenameWithDatetime(base) {
         const now = new Date();
         const pad = (n) => String(n).padStart(2, '0');
@@ -353,24 +352,14 @@ function exportExcel() {
         const m = pad(now.getMonth() + 1);
         const y = now.getFullYear();
         // Brazilian date order: DD-MM-YYYY (no time)
-        return `${base}-${d}-${m}-${y}.csv`;
+        return `${base}-${d}-${m}-${y}.xlsx`;
     }
 
-    a.download = filenameWithDatetime('saldoHoras');
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    // Some browsers require user gesture; attempt to focus and click
-    a.focus();
-    a.click();
-
-    setTimeout(() => {
-        try { document.body.removeChild(a); } catch (e) {}
-        URL.revokeObjectURL(url);
-    }, 1500);
+    XLSX.writeFile(wb, filenameWithDatetime('saldoHoras'));
 }
 
-// ensure exportTableCsv uses same helper
-function exportTableCsv() {
+// ensure exportTableXlsx uses XLSX format
+function exportTableXlsx() {
     if (!tableHasData()) { alert('Calcule antes de exportar.'); return; }
     const data = getTableData();
     if (!data) { alert('Tabela não encontrada para exportar.'); return; }
@@ -378,12 +367,13 @@ function exportTableCsv() {
     if (data.headers && data.headers.length) lines.push(data.headers);
     data.rows.forEach(r => lines.push(r));
     if (data.footer) lines.push(data.footer);
-    const csv = lines.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'saldo_horas_table.csv';
-    a.click();
+
+    // Create workbook and add worksheet
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(lines);
+    XLSX.utils.book_append_sheet(wb, ws, "Saldo");
+
+    XLSX.writeFile(wb, 'saldo_horas_table.xlsx');
 }
 
 function trapFocus(modalEl) {
@@ -821,7 +811,7 @@ if (importBtn) importBtn.addEventListener('click', (e) => {
     e.preventDefault();
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.csv,text/csv';
+    input.accept = '.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
     input.style.display = 'none';
     input.addEventListener('change', (ev) => {
         const file = input.files && input.files[0];
@@ -829,10 +819,12 @@ if (importBtn) importBtn.addEventListener('click', (e) => {
         const reader = new FileReader();
         reader.onload = () => {
             try {
-                const text = reader.result;
-                const delim = detectDelimiter(text);
-                const rows = parseCSV(text, delim);
-                if (!rows || rows.length < 2) { alert('CSV inválido ou vazio.'); return; }
+                const data = new Uint8Array(reader.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+                
+                if (!rows || rows.length < 2) { alert('XLSX inválido ou vazio.'); return; }
                 const headers = rows[0].map(h => h || '');
                 const headerNorms = headers.map(h => normalizeHeader(h));
 
@@ -910,14 +902,14 @@ if (importBtn) importBtn.addEventListener('click', (e) => {
                     populateClearModalList();
                     alert(`Importados ${imported} registro(s).`);
                 } else {
-                    alert('Nenhum registro importado. Verifique o arquivo CSV.');
+                    alert('Nenhum registro importado. Verifique o arquivo XLSX.');
                 }
             } catch (err) {
                 console.error(err);
-                alert('Erro ao processar CSV: ' + (err && err.message ? err.message : err));
+                alert('Erro ao processar XLSX: ' + (err && err.message ? err.message : err));
             }
         };
-        reader.readAsText(file, 'utf-8');
+        reader.readAsArrayBuffer(file);
     });
     document.body.appendChild(input);
     input.click();
